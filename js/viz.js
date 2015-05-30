@@ -20,11 +20,11 @@ function render(id, fData) {
     }
 
     var keys = [
-        // {name: 'RetailPrice'},
-        // {name: 'EngineSize'},
+        {name: 'RetailPrice'},
+        {name: 'EngineSize'},
         {name: 'Cyl'},
-        // {name: 'HP'},
-        //{name: 'CityMPG'},
+        {name: 'HP'},
+        {name: 'CityMPG'},
         {name: 'HwyMPG'}
         ]
 
@@ -36,6 +36,7 @@ function render(id, fData) {
         d.min = d3.min(fData, function(val) { return val[d.name]; })
         d.max = d3.max(fData, function(val) { return val[d.name]; })
         d.active = false
+        d.fill = 'black'
     })
 
     /**
@@ -66,20 +67,25 @@ function render(id, fData) {
     function updateDust() {
         d3.selectAll('.dust-circle')
             .transition()
-            .duration(1000)
+            .duration(500)
+            // .delay(function(d, i) {
+            //     return i * 10
+            // })
             .ease('bounce')
             .attr('cx', function(d) {
                 // current loc
                 var x = d.x
                 keys.forEach(function(key) {
-                    var val = key.name
-                    var dustVal = d[val]
-                    // get the difference in distance
-                    var deltaX = key.x - x
-                    // get the force scalar
-                    var scale = d3.scale.linear().domain([key.min, key.max]).range([0.1, 0.9])
-                    var force = scale(dustVal)
-                    x += deltaX * force
+                    if (key.active == true) {
+                        var val = key.name
+                        var dustVal = d[val]
+                        // get the difference in distance
+                        var deltaX = key.x - x
+                        // get the force scalar
+                        var scale = d3.scale.linear().domain([key.min, key.max]).range([0.1, 0.9])
+                        var force = scale(dustVal)
+                        x += deltaX * force
+                    }
                 })
                 return x
             })
@@ -87,16 +93,25 @@ function render(id, fData) {
                 // current loc
                 var y = d.y
                 keys.forEach(function(key) {
-                    var val = key.name
-                    var dustVal = d[val]
-                    // get the difference in distance
-                    var deltaY = key.y - y
-                    // get the force scalar
-                    var scale = d3.scale.linear().domain([key.min, key.max]).range([0.1, 0.9])
-                    var force = scale(dustVal)
-                    y += deltaY * force
+                    if (key.active == true) {
+                        var val = key.name
+                        var dustVal = d[val]
+                        // get the difference in distance
+                        var deltaY = key.y - y
+                        // get the force scalar
+                        var scale = d3.scale.linear().domain([key.min, key.max]).range([0.1, 0.9])
+                        var force = scale(dustVal)
+                        y += deltaY * force
+                    }
                 })
                 return y
+            })
+    }
+
+    function updateMagnets() {
+        d3.selectAll('.magnet-circle')
+            .attr('fill', function(d) {
+                return d.fill
             })
     }
 
@@ -116,7 +131,9 @@ function render(id, fData) {
                         .enter()
                         .append('g')
                         .attr('class', 'magnet-group')
-    magnets.call(tip)
+                        .call(tip)
+
+    //magnets.call(tip)
     // create the magnet circles
     magnets.append('circle')
             .attr('class', 'magnet-circle')
@@ -131,9 +148,20 @@ function render(id, fData) {
             .attr('r', function(d, i) {
                 return magnetRadius
             })
+            .attr('fill', function(d) {
+                return d.fill
+            })
             .call(drag)
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
+            .on('dblclick', function(d) {
+                d.active = !d.active
+                if (d.active == true)
+                    d.fill = 'red'
+                else d.fill = 'black'
+                updateDust()
+                updateMagnets()
+            })
     var dust = svg.selectAll('.dust-group')
                         .data(fData)
                         .enter()
@@ -154,6 +182,7 @@ function render(id, fData) {
             return d.y;
         })
         .attr('r', 5)
+        .attr('fill', 'blue')
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
 }
