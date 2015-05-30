@@ -153,7 +153,8 @@ function render(id, fData) {
             })
             .call(drag)
             .on('mouseover', tip.show)
-            .on('mouseout', tip.hide)
+            //.on('mouseout', tip.hide)
+            .on('click', tip.show)
             .on('dblclick', function(d) {
                 d.active = !d.active
                 if (d.active == true)
