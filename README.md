@@ -1,6 +1,6 @@
 # Dust and Magnet d3 Implementation #
 
-Dust and magnet is a data visualization technique introduced by Dr. John Stasko at Georgia Tech. 
+Dust and magnet is a [data visualization technique introduced by Dr. John Stasko at Georgia Tech](http://www.cc.gatech.edu/gvu/ii/dnm/). 
 
 ## Premise ##
 
