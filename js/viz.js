@@ -151,6 +151,17 @@ function render(id, fData) {
                 updateDust();
                 updateMagnets();
             });
+// var text = magnets
+//                 .append("text");
+//
+// var textLabels = text
+//                     .attr("x", function(d) { return d.x; })
+//                     .attr("y", function(d) { return d.y; })
+//                     .text(function(d) { return d.name; })
+//                     .attr("font-family", "sans-serif")
+//                     .attr("font-size", "20px")
+//                     .attr("fill", "red");
+
     var dust = svg.selectAll('.dust-group')
                         .data(fData)
                         .enter()
