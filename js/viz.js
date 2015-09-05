@@ -6,8 +6,8 @@ function render(id, fData) {
      * General info about the window and the visualization
      */
     var panelHeight = 50;
-    var width = $(window).width() - 50;
-    var height = $(window).height();
+    var width = window.innerWidth;
+    var height = window.innerHeight;
     var padding = 10;
     var dustRadius = 5;
     var magnetRadius = 20;
@@ -75,7 +75,7 @@ function render(id, fData) {
                 var dx = 0;
                 keys.forEach(function(key) {
                     if (key.active === true) {
-                        dx += d[key.name] * (key.x - d.x) / 50;
+                        dx += (d.normalized)[key.name] * (key.x - d.x) / 20;
                     }
                 });
                 d.x += dx;
@@ -86,7 +86,7 @@ function render(id, fData) {
                 var dy = 0;
                 keys.forEach(function(key) {
                     if (key.active === true) {
-                        dy += d[key.name] * (key.y - d.y) / 50;
+                        dy += (d.normalized)[key.name] * (key.y - d.y) / 20;
                     }
                 });
                 d.y += dy;
@@ -110,7 +110,7 @@ function render(id, fData) {
     var svg = d3.select(id).append('svg')
                 .attr('width', width)
                 .attr('height', height)
-                .attr('style', 'padding: 10px 10px;');
+                .attr('style', 'padding: 0;');
     // create the magnet circles
     var magnets = svg.selectAll('.magnet-group')
                         .data(keys)
