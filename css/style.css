@@ -4,6 +4,10 @@ body {
     padding: 0;
 }
 
+#viz {
+    background-color: #ddd;
+}
+
 .d3-tip {
     font-family: "Helvetica Neue", Helvetica, Arial;
     line-height: 1;

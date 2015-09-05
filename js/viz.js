@@ -52,9 +52,10 @@ function render(id, fData) {
     var drag = d3.behavior.drag()
                 .origin(function(d) { return d; })
                 .on("drag", dragmove);
-                // .on("drag", updateDust);
 
     function dragmove(d) {
+        // console.log("drag");
+        d.noClick = true;
         d3.select(this)
             .attr("cx", d.x = Math.max(magnetRadius, Math.min(width - magnetRadius, d3.event.x)))
             .attr("cy", d.y = Math.max(magnetRadius, Math.min(height - magnetRadius, d3.event.y)));
@@ -139,17 +140,21 @@ function render(id, fData) {
             })
             .call(drag)
             .on('mouseover', tip.show)
-            //.on('mouseout', tip.hide)
-            .on('click', tip.show)
-            .on('dblclick', function(d) {
-                d.active = !d.active;
-                if (d.active === true) {
-                    d.fill = 'red';
+            .on('mouseout', tip.hide)
+            .on('click', function(d) {
+                // console.log("click", d.noClick);
+                if (!d.noClick) {
+                    d.active = !d.active;
+                    if (d.active === true) {
+                        d.fill = 'red';
+                    } else {
+                        d.fill = 'black';
+                    }
+                    updateDust();
+                    updateMagnets();
                 } else {
-                    d.fill = 'black';
+                    d.noClick = false;
                 }
-                updateDust();
-                updateMagnets();
             });
 // var text = magnets
 //                 .append("text");
