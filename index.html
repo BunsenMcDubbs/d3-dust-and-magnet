@@ -11,12 +11,19 @@
         <script src="https://cdn.rawgit.com/Caged/d3-tip/master/index.js" charset="utf-8"></script>
         <script src="assets/data.js"></script>
         <script src="assets/test.js"></script>
+        <script src="js/touch-emulator.js"></script>
+        <script> TouchEmulator(); </script>
+        <script src="js/hammer.js"></script>
         <script type="text/javascript" src="js/viz.js"></script>
     </head>
     <body>
         <div id="viz"></div>
         <script type="text/javascript">
             render('#viz', test);
+            // var hammerTime = new Hammer(document.body);
+            // hammerTime.on("pinch", function(ev) {
+            //     console.log(ev, "pinch on", this);
+            // });
         </script>
     </body>
 </html>

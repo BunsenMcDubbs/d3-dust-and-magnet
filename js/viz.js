@@ -57,8 +57,8 @@ function render(id, fData) {
         // console.log("drag");
         d.noClick = true;
         d3.select(this)
-            .attr("cx", d.x = Math.max(magnetRadius, Math.min(width - magnetRadius, d3.event.x)))
-            .attr("cy", d.y = Math.max(magnetRadius, Math.min(height - magnetRadius, d3.event.y)));
+            .attr("cx", d.x = Math.max(d.rad, Math.min(width - d.rad, d3.event.x)))
+            .attr("cy", d.y = Math.max(d.rad, Math.min(height - d.rad, d3.event.y)));
     }
 
     d3.timer(updateDust);
@@ -76,7 +76,7 @@ function render(id, fData) {
                 var dx = 0;
                 keys.forEach(function(key) {
                     if (key.active === true) {
-                        dx += (d.normalized)[key.name] * (key.x - d.x) / 20;
+                        dx += (d.normalized)[key.name] * key.rad * (key.x - d.x) / 50;
                     }
                 });
                 d.x += dx;
@@ -87,7 +87,7 @@ function render(id, fData) {
                 var dy = 0;
                 keys.forEach(function(key) {
                     if (key.active === true) {
-                        dy += (d.normalized)[key.name] * (key.y - d.y) / 20;
+                        dy += (d.normalized)[key.name] * key.rad * (key.y - d.y) / 50;
                     }
                 });
                 d.y += dy;
@@ -99,6 +99,9 @@ function render(id, fData) {
         d3.selectAll('.magnet-circle')
             .attr('fill', function(d) {
                 return d.fill;
+            })
+            .attr('r', function(d) {
+                return d.rad;
             });
     }
 
@@ -118,7 +121,24 @@ function render(id, fData) {
                         .enter()
                         .append('g')
                         .attr('class', 'magnet-group')
-                        .call(tip);
+                        .call(tip)
+                        .each(function(d) {
+                            var self = this;
+                            var hammertime = new Hammer(self, {
+                                prevent_default: true,
+                            });
+                            hammertime.get('pinch').set({ enable: true });
+                            hammertime.on('pinch', function(ev) {
+                                var test = d3.select(self).datum();
+                                console.log(test);
+                                var x = ev.pointers[0].pageX - ev.pointers[1].pageX;
+                                x = x * x;
+                                var y = ev.pointers[0].pageY - ev.pointers[1].pageY;
+                                y = y * y;
+                                test.rad = Math.sqrt(x + y) / 2;
+                                updateMagnets();
+                            });
+                        });
 
     //magnets.call(tip)
     // create the magnet circles
@@ -133,7 +153,8 @@ function render(id, fData) {
                 return d.y;
             })
             .attr('r', function(d, i) {
-                return magnetRadius;
+                d.rad = magnetRadius;
+                return d.rad;
             })
             .attr('fill', function(d) {
                 return d.fill;
