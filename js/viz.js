@@ -15,8 +15,24 @@ function render(id, fData) {
     var magnetRadius = 20;
 
     var myId = parseInt(Math.random() * 100000);
-    var fb = new Firebase('https://dustandmagnet.firebaseio.com/session/1');
-
+    var fb = new Firebase('https://dustandmagnet.firebaseio.com/session/1/');
+    var magnetState = {};
+    fb.on('value', function(data) {
+      magnetState = data.val() || {};
+      for (var magnetId in magnetState) {
+        var magnet = magnetState[magnetId];
+        if (!magnet.owner || magnet.owner != myId) {
+          if (!!magnet.x && !!magnet.y)
+            _moveMagnet(d3.select("#" + magnetId), magnet.x, magnet.y);
+          }
+          if (!!magnet.r) {
+            _resizeMagnet(d3.select("#" + magnetId), magnet.r);
+          }
+          if (magnet.active !== undefined) {
+            _setActiveMagnet(d3.select("#" + magnetId), !!magnet.active);
+          }
+      }
+    });
 
     // get properties of the data
     var props = [];
@@ -57,11 +73,10 @@ function render(id, fData) {
 
     var drag = d3.behavior.drag()
                 .origin(function(d) { return d; })
-                .on("drag", dragmove);
+                .on("drag", dragmove)
+                .on("dragend", function() { releaseMagnet(this); });
 
     function dragmove(d) {
-        d.noClick = true;
-        console.log(d.pinch);
         if (!d.pinch) {
           moveMagnet(
             this,
@@ -70,16 +85,91 @@ function render(id, fData) {
         }
     }
 
-    function moveMagnet(magnet, x, y) {
+    function releaseMagnet(magnet) {
       magnet = d3.select(magnet);
-      var d = magnet.datum();
-      magnet.attr('cx', d.x = x).attr('cy', d.y = y);
+      fb.child(magnet.attr('id')).child('owner').remove();
     }
 
-    function resizeMagnet(magnet, x, y) {
+    function isAvailableMagnet(magnetId) {
+      return !magnetState[magnetId] || !magnetState[magnetId].owner || magnetState[magnetId].owner == myId;
+    }
+
+    function moveMagnet(magnet, x, y) {
       magnet = d3.select(magnet);
+      if (isAvailableMagnet(magnet.attr('id'))) {
+        var claim = {
+          'owner': myId,
+          'x': x,
+          'y': y
+        };
+        _updateMagnet(magnet.attr('id'), claim);
+        _moveMagnet(magnet, x, y);
+      }
+    }
+
+    function resizeMagnet(magnet, x, y, r) {
+      magnet = d3.select(magnet);
+      if (isAvailableMagnet(magnet.attr('id'))) {
+        var claim = {
+          'owner': myId,
+          'r': r,
+          'x': x,
+          'y': y
+        };
+        _updateMagnet(magnet.attr('id'), claim);
+        _resizeMagnet(magnet, r);
+        _moveMagnet(magnet, x, y);
+      }
+    }
+
+    function toggleMagnet(magnet) {
+      magnet = d3.select(magnet);
+      if (isAvailableMagnet(magnet.attr('id'))) {
+        _toggleMagnet(magnet);
+        var claim = {
+          'owner': myId,
+          'active': !!magnet.datum().active
+        };
+        _updateMagnet(magnet.attr('id'), claim, function() {
+          releaseMagnet(magnet);
+        });
+      }
+    }
+
+    function _moveMagnet(magnet, x, y) {
       var d = magnet.datum();
-      magnet.attr('r', d.rad = Math.sqrt(x*x + y*y) / 2);
+      magnet.select('.magnet-circle').attr('cx', d.x = x).attr('cy', d.y = y);
+    }
+
+    function _resizeMagnet(magnet, r) {
+      var d = magnet.datum();
+      magnet.select('.magnet-circle').attr('r', d.rad = r);
+    }
+
+    function _toggleMagnet(magnet) {
+      var d = magnet.datum();
+      d.active = !d.active;
+      magnet.select('.magnet-circle').attr('fill', function(d) {
+        return d.active ? 'red' : 'black';
+      });
+    }
+
+    function _setActiveMagnet(magnet, active) {
+      var d = magnet.datum();
+      d.active = active;
+      magnet.select('.magnet-circle').attr('fill', function(d) {
+        return d.active ? 'red' : 'black';
+      });
+    }
+
+    function _updateMagnet(magnet, opts, callback) {
+      opts = opts || {};
+      if (!callback) { callback = function(){}; }
+      var currState = magnetState[magnet];
+      for (var opt in opts) {
+        currState[opt] = opts[opt];
+      }
+      fb.child(magnet).set(currState, callback);
     }
 
     d3.timer(updateDust);
@@ -110,16 +200,6 @@ function render(id, fData) {
             });
     }
 
-    function updateMagnets() {
-        d3.selectAll('.magnet-circle')
-            .attr('fill', function(d) {
-                return d.fill;
-            })
-            .attr('r', function(d) {
-                return d.rad;
-            });
-    }
-
     /**************************************************************************/
     /* END: initial variables                                                 */
     /**************************************************************************/
@@ -138,6 +218,7 @@ function render(id, fData) {
                         .attr('class', 'magnet-group')
                         .attr('id', function(d) { return d.name; })
                         .call(tip)
+                        .call(drag)
                         .each(function(d) {
                             var self = this;
                             var hammertime = new Hammer(self, {
@@ -149,18 +230,19 @@ function render(id, fData) {
                               magnet.pinch = true;
                             });
                             hammertime.on('pinch', function(ev) {
-                                var magnet = d3.select(self).datum();
-                                var x = ev.pointers[0].pageX - ev.pointers[1].pageX;
-                                var y = ev.pointers[0].pageY - ev.pointers[1].pageY;
-                                resizeMagnet(self, x, y);
-                                x = (ev.pointers[0].pageX + ev.pointers[1].pageX) / 2;
-                                y = (ev.pointers[0].pageY + ev.pointers[1].pageY) / 2;
-                                moveMagnet(self, x, y);
-                                updateMagnets();
+                                var dx = ev.pointers[0].pageX - ev.pointers[1].pageX;
+                                var dy = ev.pointers[0].pageY - ev.pointers[1].pageY;
+                                var x = (ev.pointers[0].pageX + ev.pointers[1].pageX) / 2;
+                                var y = (ev.pointers[0].pageY + ev.pointers[1].pageY) / 2;
+                                resizeMagnet(self, x, y, Math.sqrt(dx*dx + dy*dy));
                             });
                             hammertime.on('pinchend', function(ev) {
                               var magnet = d3.select(self).datum();
                               magnet.pinch = false;
+                              releaseMagnet(self);
+                            });
+                            hammertime.on('tap', function(ev) {
+                              toggleMagnet(self);
                             });
                         });
 
@@ -183,24 +265,9 @@ function render(id, fData) {
             .attr('fill', function(d) {
                 return d.fill;
             })
-            .call(drag)
             .on('mouseover', tip.show)
-            .on('mouseout', tip.hide)
-            .on('click', function(d) {
-                // console.log("click", d.noClick);
-                if (!d.noClick) {
-                    d.active = !d.active;
-                    if (d.active === true) {
-                        d.fill = 'red';
-                    } else {
-                        d.fill = 'black';
-                    }
-                    updateDust();
-                    updateMagnets();
-                } else {
-                    d.noClick = false;
-                }
-            });
+            .on('mouseout', tip.hide);
+
 // var text = magnets
 //                 .append("text");
 //
