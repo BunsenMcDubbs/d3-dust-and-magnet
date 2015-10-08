@@ -8,8 +8,8 @@ function render(id, fData) {
     var panelHeight = 50;
     // var width = window.innerWidth;
     // var height = window.innerHeight;
-    var width = 640;
-    var height = 480;
+    var width = 800;
+    var height = 600;
     var padding = 10;
     var dustRadius = 5;
     var magnetRadius = 20;
