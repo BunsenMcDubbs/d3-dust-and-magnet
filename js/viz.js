@@ -22,7 +22,7 @@ function render(id, fData) {
       for (var magnetId in magnetState) {
         var magnet = magnetState[magnetId];
         if (!magnet.owner || magnet.owner != myId) {
-          if (!!magnet.x && !!magnet.y)
+          if (!!magnet.x && !!magnet.y) {
             _moveMagnet(d3.select("#" + magnetId), magnet.x, magnet.y);
           }
           if (!!magnet.r) {
@@ -31,6 +31,7 @@ function render(id, fData) {
           if (magnet.active !== undefined) {
             _setActiveMagnet(d3.select("#" + magnetId), !!magnet.active);
           }
+        }
       }
     });
 
@@ -86,8 +87,11 @@ function render(id, fData) {
     }
 
     function releaseMagnet(magnet) {
-      magnet = d3.select(magnet);
-      fb.child(magnet.attr('id')).child('owner').remove();
+      if (typeof magnet !== "string") {
+        magnet = d3.select(magnet);
+        magnet = magnet.attr('id');
+      }
+      fb.child(magnet).child('owner').remove();
     }
 
     function isAvailableMagnet(magnetId) {
@@ -131,7 +135,7 @@ function render(id, fData) {
           'active': !!magnet.datum().active
         };
         _updateMagnet(magnet.attr('id'), claim, function() {
-          releaseMagnet(magnet);
+          releaseMagnet(magnet.attr('id'));
         });
       }
     }
@@ -166,6 +170,9 @@ function render(id, fData) {
       opts = opts || {};
       if (!callback) { callback = function(){}; }
       var currState = magnetState[magnet];
+      if (!currState) {
+        currState = {};
+      }
       for (var opt in opts) {
         currState[opt] = opts[opt];
       }
